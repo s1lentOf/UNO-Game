@@ -1,4 +1,5 @@
-package Uno;
+// Ihor Ivanchenko : 3156686
+package griffith;
 
 import java.util.Scanner;
 

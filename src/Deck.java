@@ -1,13 +1,16 @@
-package Uno;
+// Ihor Ivanchenko : 3156686
+package griffith;
 
 public class Deck {
     private Card[] drawPile;  // Array to hold the draw pile;
     private Card[] discardPile;  // Array to hold the discard pile;
     private int drawPileSize;  // Size of the remaining draw pile;
+    private int discardPileSize; // Size of the played cards;
     public Card[] player1Deck; // Array to hold the cards of the first player;
     public Card[] player2Deck; // Array to hold the cards of the second player;
+    public Card currentCard; // A current card on the table;
 
-    // Constructor
+    // Constructor;
     public Deck() {
         // Initialize the arrays
         drawPile = new Card[108]; // Here we assign space for the UNO deck of size 108 cards;
@@ -15,6 +18,7 @@ public class Deck {
         player1Deck = new Card[7]; // Here we assign space for player1 deck of size 7 cards;
         player2Deck = new Card[7]; // Here we assign space for player2 deck of size 7 cards too;
         drawPileSize = 0; // Start with an empty draw pile;
+        discardPileSize = 0; // Start with an empty discard pile;
         initializeDeck();  // Initialize the deck with UNO cards;
         initializePlayers(); // Initialize decks for two players;
         shuffle();  // Shuffle the deck after initialization;
@@ -36,15 +40,23 @@ public class Deck {
             }
         }
 
+        drawPileSize = index;  // Set the size of the deck without Wild cards and Wild Draw Four cards;
+
+        int randomIndex = (int) (Math.random() * drawPileSize);
+        currentCard = drawPile[randomIndex];
+
         // Add Wild cards and Wild Draw Four cards;
         for (int i = 0; i < 4; i++) {
             drawPile[index++] = new Card("Wild", "Wild");
             drawPile[index++] = new Card("Wild", "Draw Four");
         }
 
-        drawPileSize = index;  // Set the size of the deck;
+        drawPileSize = index;  // Set the starting size of the deck;
+
+        removeCardFromDrawPile(randomIndex);
     }
 
+    // Method to assign 7 cards to each player deck;
     private void initializePlayers () {
         for (int i = 0; i < 7; i++) {
             int randomIndex = (int) (Math.random() * drawPileSize);
@@ -71,7 +83,7 @@ public class Deck {
         --drawPileSize; // Decrease the size of the draw pile;
     }
 
-    // Method to shuffle the deck
+    // Method to shuffle the deck;
     public void shuffle() {
         for (int i = 0; i < drawPileSize; i++) {
             // Here we generate a number in a range from 0 to 107
@@ -83,49 +95,71 @@ public class Deck {
         }
     }
 
-    // Method to draw a card from the draw pile
-    public Card draw() {
-        if (drawPileSize == 0) {
-            reshuffle();  // Reshuffle if the draw pile is empty
-        }
-        --drawPileSize;
-        return drawPile[drawPileSize];
-    }
-
-    // Method to reshuffle the discard pile into the draw pile
+    // Method to reshuffle the discard pile into the draw pile;
     private void reshuffle() {
-        int discardSize = drawPileSize;
-        // Move cards from discard pile back to draw pile
+        int discardSize = discardPileSize; // Get the number of cards in the discard pile;
+
+        // Move cards from discard pile back to draw pile;
         for (int i = 0; i < discardSize; i++) {
-            drawPile[i] = discardPile[i];
+            drawPile[drawPileSize + i] = discardPile[i]; // Add cards to the end of the draw pile;
         }
-        drawPileSize = discardSize;
-        shuffle();  // Shuffle the new deck
+
+        drawPileSize += discardSize; // Update the draw pile size;
+        shuffle(); // Shuffle the new deck;
     }
 
-    // Method to add a card to the discard pile
+    // Method to add a card to the discard pile;
     public void addToDiscardPile(Card card) {
-        discardPile[drawPileSize] = card;  // Add the card to discard pile
-    }
-
-    // Method to check the size of the draw pile
-    public int getDrawPileSize() {
-        return drawPileSize;
-    }
-
-    // Method to peek at the top card of the draw pile
-    public Card peekTopCard() {
-        if (drawPileSize > 0) {
-            return drawPile[drawPileSize - 1];
+        if (discardPileSize >= discardPile.length) {
+            reshuffle();
         }
-        return null;  // No cards left in the draw pile
+        discardPile[discardPileSize] = card;  // Add the card to discard pile;
+        discardPileSize++; // Increment the size of the array;
     }
 
-    public Card peekCardAt(int index) {
-        if (index >= 0 && index < drawPileSize) {
-            return drawPile[index];
+    // Method to peek at the top card of the draw pile;
+    public Card[] peekTopCard(Card[] playerDeck) {
+        Card[] newDeck = new Card[playerDeck.length + 1];
+        int index = 0;
+        for (Card card : playerDeck) {
+            newDeck[index++] = card;
         }
-        return null; // Return null if the index is invalid
+
+        if (drawPileSize <= 0) {
+            reshuffle();  // Reshuffle if no cards remain;
+        }
+        newDeck[newDeck.length - 1] = drawPile[drawPileSize - 1];
+        removeCardFromDrawPile(drawPileSize - 1);
+
+        return newDeck;
     }
+
+    // Method to add two cards to the opponent if "Draw Two";
+    public Card[] drawTwo(Card[] playerDeck) {
+        for (int i = 0; i < 2; i++) {
+            playerDeck = peekTopCard(playerDeck);
+        }
+        return playerDeck;
+    }
+
+    // Method to add four cards to the opponent if "Draw Four";
+    public Card[] drawFour(Card[] playerDeck) {
+        for (int i = 0; i < 4; i++) {
+            playerDeck = peekTopCard(playerDeck);
+        }
+        return playerDeck;
+    }
+
+    // Method to remove selected card from deck;
+    public Card[] removeCardFromDeck(Card[] playerDeck, int index) {
+        Card[] newDeck = new Card[playerDeck.length - 1];
+        for (int i = 0, j = 0; i < playerDeck.length; i++) {
+            if (i != index) {
+                newDeck[j++] = playerDeck[i];
+            }
+        }
+        return newDeck;
+    }
+
 }
 
